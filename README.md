@@ -4,3 +4,6 @@ This repository is intended as a place for storage and sharing of the recitation
 # Table of contents
 - Lecture 1: [Fake data](https://github.com/swagner1470/Causal-inference-TA-materials/blob/main/Recitation%20materials/Recitation%201%20-%20Fake%20data.md)
 - Lecture 2: [Bias and apply/loops](https://github.com/swagner1470/Causal-inference-TA-materials/blob/main/Recitation%20materials/Recitation%202-%20Bias%20apply%20loops.md)
+- Lecture 3: [Randomization](https://github.com/swagner1470/Causal-inference-TA-materials/blob/main/Recitation%20materials/Recitation%203%20-%20Randomization.md)
+- Lecture 4: [Randomization and bias](https://github.com/swagner1470/Causal-inference-TA-materials/blob/main/Recitation%20materials/Recitation%204%20-%20Randomization%20and%20bias.md)
+- Lecture 5: [Data visualization](https://github.com/swagner1470/Causal-inference-TA-materials/blob/main/Recitation%20materials/Recitation%205%20-%20Data%20visualization.md)
