@@ -1,0 +1,261 @@
+---
+title: "Recitation 12: Text analytics"
+author: "Seamus Wagner"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width=8, fig.height=5, fig.align = "center", echo=T, warning=FALSE, message=FALSE)
+```
+
+# Text analytics
+
+Text as data and text analytics are coming into quantitative political science work rapidly. There are two main avenues for improvement that I see. Because text as data is such a broad topic, this is heavilty influenced by how I see the application and what *should* be done as we move forward. The two main avenues for cutting edge work is in measurement (pre-processing) and how to adapt/create models using different types of text (whether this is through different languages, different media, or different topics). Those two are incredibly broad themselves, but by measurement or pre-processing, the prevailing literature revolves around a number of decisions that are more or less uniformly applied or (maybe?) theoretically derived. These types of decisions are what are necessary to go from raw data to some series of numbers usually a document term matrix/term document matrix. They are interchanable and you will see both DTM/TDM. Moving from raw data to a DTM is where we will spend most of this lab. The second topic is adapting existing models to new data scenarios. The two main types of learning models we use are supervised and unsupurvised.
+
+# Supervised models 
+
+There are others, but for the introduction, these two are the important frameworks of modeling. Supervised models are used for classification, where you feed a model a bunch of text (or images, or some other data) with identifiers present to train on. Then, we feed that model unidentified text (or images, or other data) and the model will classify what we give it using the trained identifiers. These are popularly used for document classification, speech recognition, and sentiment recognition. The goal of supervised models is to increase certainty and accuracy of classification. When using these models, you can actually tell how well these perform (assuming you know what the underlying thing you are training it for). 
+
+# Unsupervised Models
+
+For unsupervised models, you are trying to understand some latent structure. In practice, many of the models we use are likely a combination of supervised and unsupervised. For instance, topic modeling is likely the most commonly used unsupervised approach in social sciences. Topic models treat your text as a bag of words that is unstructured. It then finds ``topics" present in the data but varyingly so. A good link is [here](http://archive.ceciis.foi.hr/app/public/conferences/2020/Proceedings/IIS/IIS2.pdf) to show what they do visually. Topic modeling (LDA) specifically, is one of the most common models used. It is also not perfect, as no mdoels are. BUt, it is important to note with many of these models, there *will* be misclassifications and some readers will not like that. It is important to think about how accurate they can be and building into your research design some level of human validity check is wise. See Table 3 [here](https://journals.sagepub.com/doi/pdf/10.1177/1077699016639231) for how even the *best* model only captures $~$66$%$ of human coded set of Tweets. One of the bigger hurdles for social scientists using this approach is a removal from statistical significance and causality. You can validate against other models, which is typically what is done, or use smaller subsets and human expert coding. There is room for more validation techniques. Though, remember that human coders are unreliable, and so you need intercoder reliability checks, this gets incredibly expensive, nearly prohibitively so for non-native languages. See [here](https://journals.sagepub.com/doi/pdf/10.1177/2053951715602908) for a good introduction to this concept. There is and likely will always be room for improvement in how humans interact with computers to emulate human decision-making. 
+
+# Pre-processing
+Pre-processing is one of(*the* imo) the most important decisions that all of you will have to make if you use text for quantitative analyses, and that is to turn those words into numbers somehow. The world of ComSci where many of these techniques evolved out of hold human judgment as the gold standard. Think about what sentiment analysis does, it codes a sentences/document into positive/negative sentiments. There are many many types of models, some of which use more than positive/negative as the only binary, see [here](https://saifmohammad.com/WebPages/NRC-Emotion-Lexicon.htm) for NRC sentiment analysis developed by Saif Mohammad. This is implemented in the syuzhet R package as well. Some of the issues with these models are English language centrality, human subjectivity, and the roots in product review. Those three are not the only issues, but some that I find troubling. First, these types of models, where a human or some number of humans, determine a list of words that invoke some latent sentiment (itself subjective) that is coded into the computer in English. That means for other languages we need reliable translation for the latent meaning of words beyond literal translations. Automated translations are getting better, but are still not great for *all* languages. Second, related to the first, as language shapes how people see the worlds, humans determine what is subjectively positive, negative, or any other socially constructed latent topic we may be interested in. Third, these were all built for determining whether people will buy your shit in the future and are mostly concerned with how people review products and services, which is a different set of linguistic rules as political discourse, newspaper writing, Twitter posts, and party manifestos. Twitter for instance, is very lax with syntax and structure compared to party manifestos or academic articles or newspaper articles. The structure and choice of words shifts with these contests, making things like sentiment analysis difficult to justify in many social science circumstances. It is a good place to start maybe, but usually not sufficiently convincing to me at least, this is not necessarily a lab of what will get you published but how to think about approaching text data. 
+
+The above is maybe a bit of a tangent to actual pre-processing, which I will get into here. Matt Denny has a really good PA article [here](https://www.cambridge.org/core/services/aop-cambridge-core/content/view/AA7D4DE0AA6AB208502515AE3EC6989E/S1047198717000444a.pdf/text-preprocessing-for-unsupervised-learning-why-it-matters-when-it-misleads-and-what-to-do-about-it.pdf) on this with Arthur Spirling that I think you should read if you plan to do any unsupervised learning models. The bulk of the decisions you will make will be whether to include punctuation, numbers, all lowercase words, just the root words, what/if any stopwords to remove, how many n-grams to include, and whether to include infrequent words. What to include and not is not only down to theory. Particularly in the unsupervised world, where theory may not be as well-identified. Further, drawing on supervised norms may not be ideal when we shift to unsupervised. When we think about what the goal of a supervised model versus an unsupervised model is, we move from classification to unveiling latent structures.
+
+
+# Practical examples
+
+Moving forward, here is some R code for how to pre-process and packages that you may find helpful. That being said, R is not good at this compared to others. R is very good, [quanteda](https://tutorials.quanteda.io/introduction/install/) specifically, at generating DTMs though. Matt Denny highlights the following two as faster [mallet](http://mallet.cs.umass.edu/) and [coreNLP](https://stanfordnlp.github.io/CoreNLP/).
+
+
+```{r}
+rm(list=ls())
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(stringr)
+library(quanteda)
+library(quanteda.textmodels)
+library(quanteda.textstats)
+library(quanteda.textplots)
+library(readtext)
+library(newsmap)
+library(seededlda)
+library(spacyr)
+```
+
+There are a number of other useful packages, firstly being stringr. A cheatsheet for stringr is found [here](https://evoldyn.gitlab.io/evomics-2018/ref-sheets/R_strings.pdf). stringr is part of the tidyverse and has four main functions. The first is character manipulation, the second is dealing with whitespace, the third is case sensative and locale operations, and the fourth is pattern matching functions (mostly used for regular expressions). The grepl() family is the base R equivalent I use both, mostly since I learned certain operations in one or the other. I do try to work within tidyverse as I have mentioned previously, just so packages and syntax is consistent. 
+
+Regular expressions are something that I still need to look up every time I use them. Regular expressions are a way to represent patterns in strings. stringr's page on regular expressions is found [here](https://cran.r-project.org/web/packages/stringr/vignettes/regular-expressions.html). Essentially, in R you must add an additional *\* before a regular expressions because of some reason that the specific character cannot be represented in a character string in R. I will walk through a bit of an example here and hopefully you will understand the intuition behind regular expressions and will look into them more if you need them. These are not all regular expressions, but some useful ones and I only use str_match(_all) in this section, stringr has more applications than just this. 
+
+```{r}
+# We will start with a basic series of strings
+letters <- c("abc", "abcd", "abcdf", "nmo")
+# Then use the str_match function to find all instances of ab as a pattern
+str_match(letters, "ab")
+
+# We can also define the pattern and then use it in the function
+# This pattern looks complex, but will hopefully make sense in a minute
+pattern <- '.*(\\d{3}).*(\\d{3}).*(\\d{4})'
+
+# Here is a fake list of phone numbers I came up with
+numbers <- c(
+  "814-571 4848",
+  "(614) 978 8765",
+  "Work: 458-874-8145",
+  "8149337991",
+  "I do not own a phone"
+)
+# Now let's use str_match to find these phone numbers, can anyone see what the regex is doing?
+str_match(numbers, pattern)
+
+
+```
+
+Let's break it down.
+
+```{r}
+# \d is a number in regex, we need \\d in R.
+
+# {3} is how many characters(numbers) to select (match in our case)
+
+# If we did {1} it would only pull the first number in each match
+str_match(numbers, "\\d")
+```
+
+```{r}
+# We can also add the + to match one or more
+str_match(numbers, "\\d+")
+# This can be read asmatch one or more digits from object numbers
+```
+
+```{r}
+# In regex (to my knowledge) all characters used as a regular expression have a complementary operator which is the uppercase. It always does the opposite, so this reads as give me at least one non-integer from object numbers
+str_match(numbers, "\\D+")
+```
+
+```{r}
+# We can also use str_match_all if we want to the functino to continue after it finds the first match
+str_match_all(numbers, "\\d+")
+
+```
+```{r}
+# w is another useful one, where it returns alpha-numeric characters
+str_match_all(numbers, "\\w+")
+```
+```{r}
+# The opposite is helpful for what all you are exlcuding (typically you will filter out whitespace and punctuation)
+str_match(numbers, "\\W+")
+```
+
+```{r}
+# If you have interest in whitespace, s and S are helpful.
+str_match(numbers, "\\s+")
+str_match(numbers, "\\S+")
+```
+```{r}
+# If we do not know what we have in our character vectors, we use the wildcard expression .
+
+sports <- c("swimming", "Rugby", "football", "american Football", "ice hockey")
+# This returns the first thing that appears
+str_match(sports, ".")
+
+# Returns all of it
+str_match(sports, ".+")
+
+# Sometimes we want to match things based on a ngram so we can use this code
+str_match(sports, "am.+")
+```
+
+```{r}
+#Regular expressions turn really useful when we have multiple conditions
+
+# what if we want anything that contains any set but not necessarily in that order
+str_match(sports, "oo.+")
+
+str_match(sports, "[oo].+")
+
+str_match(sports, "[ruoam].+")
+
+# You can also use the conditional bar | to separate each of them, but you need () not [] for multiple conditions. 
+str_match(sports, "(r|u|o|a|m).*")
+
+```
+Now let's read the first one again
+```{r}
+# return 0 or more wildcard characters, then give me three digits
+# then 0 or more wildcard characters, then give me three digits
+# then 0 or more wildcard characters, then give me 4 numbers
+# The digits being wrapped in a () means we capture those, and then ignore stuff outside of it.
+
+# Quick note that this only works for an exmaple like this, real phone number regular expressions should allow for +x in front of numbers and such. 
+
+pattern <- '.*(\\d{3}).*(\\d{3}).*(\\d{4})'
+
+numbers <- c(
+  "814-571 4848",
+  "(614) 978 8765",
+  "Work: 458-874-8145",
+  "8149337991",
+  "I do not own a phone"
+)
+str_match(numbers, pattern)
+```
+# Other useful text as data stuff to know
+
+Locale is selected by ISO2c codes. Base R also supports this functionality. This is important for non-English words and alphabets where letter order may be different if you are doing a sorting function for instance. stringr allows to set it within a function, since the global environment sort() and order() use English. 
+```{r}
+# Let's make a string and change it around a bit
+
+x <- "I am using this text as practice."
+
+str_to_upper(x)
+str_to_title(x)
+str_to_lower(x) # This one is most often used in preprocessing. 
+str_to_lower(x, "tr") #Turkish has two lowercase i's so it is a useful example. 
+
+```
+
+# Quick applied example
+I will use a bit of code from an earlier lab to get some text data from BBC news articles.
+```{r}
+library(rvest)
+final_df <- data.table()
+get_data <- function(article_link) {
+article_page <- read_html(article_link) #URL defined from page
+article_content <- article_page %>% html_nodes("#main-heading") %>% #Heading of each page
+html_text() #Text in that heading
+article_content$author <- article_page %>% html_nodes("strong") %>% #Author of news article
+html_text() #Author name
+article_content$date <- article_page %>% html_nodes("time") %>% #Date of publication
+html_text() #Date
+article_content$content <- article_page %>% html_nodes("p") %>% #Content of article
+html_text() %>% paste(collapse = ",") #Content of article
+return(article_content)
+}
+
+for (page_result in c(1,2)){ #The 2 in this case is manually entered as the nubmer of pages the search results return
+link <- paste0("https://www.bbc.co.uk/search?q=tanzania+corruption&page=", #The page= is where the c(1,2) goes
+page_result, "")
+page <- read_html(link)
+title <- page %>% html_nodes(".headline") %>% #Title of article
+html_text() #Text of title
+article_links <- page %>% html_nodes(".e1f5wbog0") %>% #Links in the article to go into the page for content
+html_attr("href") %>% paste('', ., sep = "")
+article_data <- sapply(article_links, FUN = get_data, USE.NAMES = F) #Do this for all links (pages)
+final_df <- rbind(final_df, rbindlist(article_data, fill=TRUE)) #Combining all the data
+print(paste("Page:", page_result))
+}
+
+
+```
+
+Now we are only really interested in one column here, the content column. So we can take a number of approaches. The first is a corpus, which combines the text data with document level data and you can manipulate them after. Here is a quick example, 
+
+```{r}
+#?corpus
+text <- final_df$content
+corp_corruption <- corpus(text)
+print(corp_corruption)
+
+summary(corp_corruption)
+
+```
+
+Notice the names are text1, ... is not ideal. One real-world issue is that these data are not identified correctly by authors (NA for all but 2), there are not titles or dates for a number of others. 
+
+
+A second option is to tekenize it. Tokens break apart each token of a text, characters, punctuation, numbers, etc. You then get a list of each item of the corpus. 
+
+```{r}
+toks_corruption <- tokens(corp_corruption)
+print(toks_corruption)
+```
+
+To show a keyword in context approach, which shows you a few words around specific keywords, you can use the kwic command. It will take keywords (typically a root(s) of some sort) and show you what is around the words. You can also specify how many words with window(). This is useful ad a face validity check for yourself to see what your scraping or data collection process gave you. You can also specify exact phrases, using phrase() instead of pattern(). Notice that these are not super helpful beyond identifying some themes for you to look into. 
+
+```{r}
+toks <- final_df$content
+kwic(toks, pattern =  "corrup*")
+kwic_corrup <- kwic(toks, pattern = c("corrup*", "accou*"), window = 5)
+kwic_corrup
+```
+
+Another use of tokens is to create n-grams. n-grams are a useful way to create common word pairings from 2-5 sometimes but 2-3 often. This means two and three word pairs. People often combine these when the type of topic you are interested in contains many of of these. Think of scraping something around the midterms in newspaper article, you probably want n3-grams for things like Critical Race Theory, because when they are combined as three, they are distinct from when they are separate. 
+
+```{r}
+toks <- tokens(final_df$content)
+toks_ngram <- tokens_ngrams(toks, n = 2:4)
+head(toks_ngram[[1]], 30)
+```
+
+```{r}
+# the word() function from string is potentially a more helpful route. An example of why regular expressions can be helpful in exploratory work more so that some canned functions. 
+word(string = corp_corruption, start = 1, end = 20, sep = fixed(" "))
+```
+
+
+
