@@ -1,0 +1,177 @@
+---
+title: "Recitation 6 - Research Design"
+author: "Seamus Wagner"
+date: "October 1, 2021"
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width=8, fig.height=5, fig.align = "center", echo=T, warning=FALSE, message=FALSE)
+```
+
+```{r, echo = F}
+library(dplyr)
+library(data.table)
+library(stargazer)
+library(ggplot2)
+```
+
+# Designing sound observational studies
+The goal for most quantitative positivist studies is to create an observation design that mimics or comes as close to mimicking an experiment within the logistical, ethical, and practical constraints posed by each question. This lab will be less R heavy than most and more of a discussion and guided example using one of my research designs.
+
+What this section of recitation will do is walk through ways to conceptualize how to set up a study at the early stages (pre-IRB and funding). These set of questions are not the only ones, but are a useful set of questions to work through yourself for every project idea you are interested in. The practice of writing it out will work better than working through them exclusively in your head, in my opinion. The act of actually defining your variables, stating your hypotheses and research questions, as well as writing out how your data set should be structured will help you envision your project. Further, this helps you define your population and your potential sample.
+
+For the working example, we will look at a question related to distributive politics using Tanzania as a case. In the unlikely event that any of you are planning to do a similar topic, just don't use the same case. There is a policy strategy employed by many low-income states called Constituency Development Funds (CDFs). These types of funding programs are a decentralized means of giving national level budget resources to more localized levels of political institutions to distribute. The intention behind them is for states with low capacity to have the most appropriate level of political institution involved in distributing money so that it is used more effectively. There are obviously issue with this in practice, think corruption, clientelism, the same state weakness persistent across government levels, and likely a dozen more issues you can think of. One interesting (to me) question about these institutions is the exact mechanism through which funds go from the national budget to the eventual individual/family/community depending upon the endpoint of distribution. Tanzania as a case is useful for the presence of a particular institutions, the CDF selection committee. These committees are comprised of seven members and are at the constituency level. They are responsible for collecting requests from their constituents for projects using CDF money, and then determining which projects get selected and whether they actually get the money, and whether that money is used for the project. So, one research question could be: ``Do selection committees increase development funding toward the most at-risk citizens in a constituency." 
+
+How would these data be structured? 
+<!-- I would argue for a panel data set, with year as the identifier for time likely, though I should have dates for some items. -->
+
+What level should it be at?
+<!-- I would say multilevel, with rows as individual projects but a clustering variable by constituency. -->
+
+What is the population of my sample? 
+<!-- I would argue that my population is the set of all proposed CDF projects in Tanzania from 2009 - 2021.  -->
+
+What would the sample size be comprised of? 
+<!-- In this case, it would be the combination of projects and years or constituencies and years depending what level we end up at.  -->
+
+What would the hypothetical experiment be? 
+<!-- If we thought committee composition was the treatment (all ruling party = 1, mixed opposition/ruling = 0), we could see election margins as the treatment in incredibly similar constituencies except for very competitive elections. So, constituency A has a 50.05% vote margin for ruling party and B has 49.91% vote margin (assuming 2 parties as we will group opposition into one category). Also, ensure similar constituency characteristics that matter (size, population, poverty, etc). Hypothetical experiment is that we change the makeup structure of the committee at random and see which areas end up with most at-risk development dollars spent. -->
+
+What are decision-makers in how these data can be produced?
+<!-- MPs make laws, COmmittee members decide which projects to select. This question is actually potentially a research question too. FOr instance, part of my project here would be to collect qualitative data from interviews and meeting notes to determine who the actual influential members are on each committee. Is it particular types of members (WEO, MP, NGO rep, etc).  -->
+
+How would you go about measuring the things these decision-makers have access to to make their decisions? 
+<!-- Well what things do they know? If we think at legislative level, they have party ID and party stance on the issue. At the committee level, they may know the constituent, they know their community, they know their party's stance on certain project funding ideas, they know their personal views on what is deserving, and they know the composition of the committee. They know the number of proposed projects. The number of projects the previous year, etc, etc. 
+
+How would you measure these? Well, you can hard code things like project location, number of projects per year,  
+
+-Semi-structured interviews with members of the CDF committee
+-The partisan composition of each committee
+-The selection criteria for choosing new members
+-The coalitions in each constituency
+-The rating of effectiveness of committee by each member
+-Any criteria for project evaluation and selection
+-Administrative data from 2010-2020 of all sampled constituencies
+-Collected at the ward level, constituency level, and national level
+-Data include a list of all projects proposed and funded
+-Proposed budget for each proposed and funded project
+-Final budget for completed projects
+-Estimated timeline for all proposed and completed projects
+-Final timeline for completed projects
+-Project type 
+-National budget for constituency development funds
+-Constituency budget for constituency development funds
+-Geo-coordinates for each project proposed and funded
+-Photographs of each project
+-Photographs include the project state of competition
+-any credit-claiming material
+-Focus-groups with a convenience sample of constituents
+-Notes on project use from site visits -->
+
+What about balance?
+<!-- Hell no. If we broke it down by partisan makeup of the committee there are a lot of options alone with no other subclassification category. There are only 265 constituencies. At least 8 parties with six seats (7th is a non-political one).  -->
+
+# Web scraping
+Web scraping is another useful data collection skill, especially in light of Covid-19 restrictions if you work in low-income regions. This will just be a basics of how to get started pulling requests from webpages. The internet is nice since it is mostly just html, and there is a ton of information stored on the internet to pull, just get creative. The style we will work with today is sometimes called static scraping. You will pick up some html as you navigate the web for scraping, but some investment into learning a bit about the html language would be useful. I did not, and cannot be of much use beyond what I have picked up from a few brief projects. If you want to see the code of a webpage, right click and choose select in Chrome and you will see the html and the respective part of the webpage that it corresponds to. One incredibly useful tool for ease of use and also learning is [Selector Gadget](https://selectorgadget.com/), a Chrome extension. I am sure that there are others for any number of browsers. 
+
+The main R package for today is rvest. rvest is good for static scraping and fairly intuitive. It also uses the tidyverse syntax. RSelenium is an option for interactive scraping and we may go into that in future recitations.
+
+From a practical stance, there are a few ways to approach scraping. One is to pull all (most) of the information into R and then clean it and sort through what you need. Another approach is to pull only the information you need, assuming you know that in the first place. Both have their uses and I provide some code for both strategies. 
+```{r}
+rm(list=ls())
+library(rvest)
+library(dplyr)
+library(data.table)
+setwd("D:/Recitations")
+#Blank Df to fill
+final_df <- data.frame()
+
+#Function to gather data
+get_data <- function(article_link) {
+  article_page <- read_html(article_link) #URL defined from page
+  article_content <- article_page %>% html_nodes("#main-heading") %>% #Heading of each page
+    html_text() #Text in that heading
+  article_content$author <- article_page %>% html_nodes("strong") %>% #Author of news article
+    html_text() #Author name
+  article_content$date <- article_page %>% html_nodes("time") %>% #Date of publication
+    html_text() #Date
+  article_content$content <- article_page %>% html_nodes("p") %>% #Content of article
+    html_text() %>%  paste(collapse = ",") #Content of article 
+  return(article_content)
+} 
+
+#now for multiple pages of a website
+for (page_result in c(1,2)){ #The 2 in this case is manually entered as the nubmer of pages the search results return
+ link <- paste0("https://www.bbc.co.uk/search?q=tanzania+corruption&page=", #The page= is where the c(1,2) goes
+                page_result, "")
+ page <- read_html(link)
+ 
+ title <- page %>% html_nodes(".headline") %>% #Title of article
+   html_text() #Text of title
+ 
+ article_links <- page %>% html_nodes(".e1f5wbog0") %>% #Links in the article to go into the page for content
+   html_attr("href") %>% paste('', ., sep = "")
+
+article_data <- sapply(article_links, FUN = get_data, USE.NAMES = F) #Do this for all links (pages)
+
+final_df <- rbind(final_df, rbindlist(article_data, fill=TRUE)) #Combining all the data
+
+print(paste("Page:", page_result))
+
+}
+
+write.csv(final_df, "recitation_df.csv") #Saving the results as a csv. hould just be 4 columns
+#Title, author, date, content
+
+```
+
+The next section if for gathering all info and then manipulating it after you collect it. This is to take all the content from the wiki page on maximum likelihood and then collecting all of the hyperlinks contained within it. 
+
+```{r}
+url <- "https://en.wikipedia.org/wiki/Maximum_likelihood_estimation"
+#Grabbing the html from the url object
+scrape_wiki <- read_html(url)
+
+#This collects all the information down the html tree from body to p
+wiki_nodes <-
+  scrape_wiki %>% 
+  html_nodes("body") %>% 
+  html_nodes("div#content") %>%
+  html_nodes("div#bodyContent") %>%
+  html_nodes("div#mw-content-text") %>%
+  html_nodes("p")
+
+wiki_nodes
+```
+
+From here we can get the actual text since it is a messy form.
+```{r}
+wiki_text <- 
+  wiki_nodes %>% 
+  html_text()
+
+wiki_text
+```
+
+Next we are going to get all of the hyperlinks within the Wikipedia page for MLE. 
+```{r}
+wiki_links <- 
+  wiki_nodes %>% 
+  html_nodes("a") %>%
+  html_attr("href")
+
+wiki_links
+```
+We can then use some of our new function writing expertise to organize them by paragraph for instance. 
+```{r}
+wiki_links_byparagraph <- sapply(wiki_nodes, function(l){
+  links <- l %>%
+    html_nodes("a") %>%
+    html_attr("href")
+  return(links)
+})
+
+wiki_links_byparagraph
+```
+
+
