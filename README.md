@@ -18,4 +18,4 @@ This repository is intended as a place for storage and sharing of the recitation
 - Recitation 12: [Weighting II](https://github.com/swagner1470/Causal-inference-TA-materials/tree/main/Recitation%20Files/recitation%2012)
 - Recitation 13: [Text analytics](https://github.com/swagner1470/Causal-inference-TA-materials/tree/main/Recitation%20Files/Recitation%2013)
 - Recitation 14: [Instrumental and discontinuity](https://github.com/swagner1470/Causal-inference-TA-materials/tree/main/Recitation%20Files/Recitation%2014)
-- Recitation 15: [Ensemble Learning](https://github.com/swagner1470/Causal-inference-TA-materials/tree/main/Recitation%20Files/Recitation%2015)
+- Recitation 15: [Ensemble Learning](https://github.com/swagner1470/Causal-inference-TA-materials/tree/main/Recitation%20Files/recitation%2015)
