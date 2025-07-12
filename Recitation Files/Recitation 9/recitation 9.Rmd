@@ -1,0 +1,113 @@
+---
+title: "Recitation 9 functions, regression, and subclassification"
+author: "Seamus Wagner"
+date: "October 25, 2021"
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width=8, fig.height=5, fig.align = "center", echo=T, warning=FALSE, message=FALSE)
+```
+
+```{r, echo = F}
+library(dplyr)
+library(data.table)
+library(ggplot2)
+```
+
+Based off of feedback from most of you, a bit of review for function calling, a review of the past lab, and some outlines for the code we reviewed for regression are in order. There are still 2 recitations I would like to give based on feedback: text analytics, and GIS work. Those will be conditional as long as course coding is going well. I will start with some overview of function calling, then we will go over the subclassification code and talk about the homework, then we will discuss the upcoming lab, answer any of your questions, and review the demo code. 
+
+# Function calling
+Function calling is something important that we reinforce in multiple ways throughout the course, but maybe don't check for intuition well enough. The goal of functions (as I see it) is to provide a clean way to execute a task repeatedly and transparently in R. They typically take some sort of input (vectors, matrix, dataframe, etc.) and then perform a task and produce a result (single value, vector, matrix, data frame, etc.). Functions are incredibly versatile and are used to create most of the packages we use in our daily R analysis. Thinking of writing a function, what goes between the regular parentheses () are the inputs, what the function needs to operate using. What comes between the curly braces {} are the actions to be executed. I think one confusing aspect based on my discussions with some of you is how functions interact with iteration commands. Functions return a value typically (though you can scale it). Typically, we want a isolated function to take some data, transform it and compute something from it. We then want to feed that function into an iteration commands (for loop/apply functions, etc.) and replicate the function over and over. One issue when writing a function with iteration in mind is that you sometimes build the iteration as inputs, which is not ideal. You do not want your function to have 1:1000 in it, you want to feed you function into a apply function 1:1000 times. We will go over some of the functions from the subclassification demo below. 
+
+The structure of the demo codes typically walk through every part of a function outside of it being within a function. We then copy/paste that code into a function and it runs well. Keep that in mind, that William builds a function and then works backwards to go over each part. That may not be what you do. 
+
+```{r}
+rm(list=ls())
+set.seed(187654)
+# Let's start with the actual function and then the iteration
+
+# Here is the function isolated, each line runs and it will give a dataset
+# Yet if you run this and don't run it through an apply function, it doesn't return 
+# anything
+simulate_fake_dataset <- function(iteration) {
+  n_strata <- 5000
+  strata <- data.table(
+    X = 1:n_strata,
+    p_Y0 = plogis(-1 + rnorm(n_strata)),
+    p_Y1 = plogis( 1 + rnorm(n_strata)))
+  strata[, p_D := plogis(2 * (p_Y1 - p_Y0))]
+  n_obs <- 50000
+  gods_data <- data.table(
+    i = 1:n_obs,
+    X = sample(n_strata, n_obs, replace = TRUE, prob = .01 + rpois(n_strata, 1)))
+  gods_data <- merge(gods_data, strata, by = "X", all.x = TRUE, sort = FALSE)
+  gods_data[, Y1 := rbinom(.N, 1, p_Y1)]
+  gods_data[, Y0 := rbinom(.N, 1, p_Y0)]
+  gods_data[, D := rbinom(.N, 1, p_D)]
+  gods_data[, Y := D * Y1 + (1 - D) * Y0]
+  gods_data
+}
+```
+
+```{r}
+# This returns nothing
+simulate_fake_dataset()
+
+# Yet this returns a list of 1
+test <- lapply(1, simulate_fake_dataset)
+head(test)
+
+```
+
+If we wanted to run this for 1 iteration, we could supply the inputs in the function command instead of using the input for iteration. In this case, we drop the defined n_strata and n_obs from within the function. Instead, we supply these values as inputs in the function. This means that the function is designed to iterate 1 time, not multiple. 
+
+```{r}
+simulate_fake_dataset1 <- function(n_strata, n_obs) {
+  strata <- data.table(
+    X = 1:n_strata,
+    p_Y0 = plogis(-1 + rnorm(n_strata)),
+    p_Y1 = plogis( 1 + rnorm(n_strata)))
+  strata[, p_D := plogis(2 * (p_Y1 - p_Y0))]
+  gods_data <- data.table(
+    i = 1:n_obs,
+    X = sample(n_strata, n_obs, replace = TRUE, prob = .01 + rpois(n_strata, 1)))
+  gods_data <- merge(gods_data, strata, by = "X", all.x = TRUE, sort = FALSE)
+  gods_data[, Y1 := rbinom(.N, 1, p_Y1)]
+  gods_data[, Y0 := rbinom(.N, 1, p_Y0)]
+  gods_data[, D := rbinom(.N, 1, p_D)]
+  gods_data[, Y := D * Y1 + (1 - D) * Y0]
+  gods_data
+}
+test1 <- simulate_fake_dataset1(n_strata = 5000, n_obs = 50000)
+head(test1)
+```
+
+```{r}
+simulate_fake_dataset2 <- function(n_strata, n_obs) {
+  strata <- data.table(
+    X = 1:n_strata,
+    p_Y0 = plogis(-1 + rnorm(n_strata)),
+    p_Y1 = plogis( 1 + rnorm(n_strata)))
+  strata[, p_D := plogis(2 * (p_Y1 - p_Y0))]
+  gods_data <- data.table(
+    i = 1:n_obs,
+    X = sample(n_strata, n_obs, replace = TRUE, prob = .01 + rpois(n_strata, 1)))
+  gods_data <- merge(gods_data, strata, by = "X", all.x = TRUE, sort = FALSE)
+  gods_data[, Y1 := rbinom(.N, 1, p_Y1)]
+  gods_data[, Y0 := rbinom(.N, 1, p_Y0)]
+  gods_data[, D := rbinom(.N, 1, p_D)]
+  gods_data[, Y := D * Y1 + (1 - D) * Y0]
+  gods_data
+}
+#test2 <- lapply(1:1000, simulate_fake_dataset2)
+# Argument is missing for the two inputs, what happens if we add them?
+#test3 <- lapply(1:1000, simulate_fake_dataset2(n_strata = 5000, n_obs = 10000))
+# Also does not work, what if we use correct syntax, this works
+test4 <- lapply(1:1000, simulate_fake_dataset2, n_obs = 10000)
+# Why, well because the first argument in the lapply is the first input from the function
+# After the call of function, we use a comma and then supply the others.
+head(test4)
+```
+
+
+We will go over the code from the regression lab from that document, rather than repeating it here. That code is what will be most useful for the upcoming lab. 
