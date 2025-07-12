@@ -15,7 +15,7 @@ This repository is intended as a place for storage and sharing of the recitation
 - Recitation 9: [Functions, regression, and subclassification](https://github.com/swagner1470/Causal-inference-TA-materials/tree/main/Recitation%20Files/Recitation%209)
 - Recitation 10: [Imputation, ridge, and lasso](https://github.com/swagner1470/Causal-inference-TA-materials/tree/main/Recitation%20Files/Recitation%2010)
 - Recitation 11: [Weighting I](https://github.com/swagner1470/Causal-inference-TA-materials/tree/main/Recitation%20Files/Recitation%2011)
-- Recitation 12: [Weighting II](https://github.com/swagner1470/Causal-inference-TA-materials/tree/main/Recitation%20Files/Recitation%2012)
+- Recitation 12: [Weighting II](https://github.com/swagner1470/Causal-inference-TA-materials/tree/main/Recitation%20Files/recitation%2012)
 - Recitation 13: [Text analytics](https://github.com/swagner1470/Causal-inference-TA-materials/tree/main/Recitation%20Files/Recitation%2013)
 - Recitation 14: [Instrumental and discontinuity](https://github.com/swagner1470/Causal-inference-TA-materials/tree/main/Recitation%20Files/Recitation%2014)
 - Recitation 15: [Ensemble Learning](https://github.com/swagner1470/Causal-inference-TA-materials/tree/main/Recitation%20Files/Recitation%2015)
