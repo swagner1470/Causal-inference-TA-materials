@@ -1,0 +1,60 @@
+---
+title: "Recitation 12: Weighting"
+author: "Seamus Wagner"
+date: "November 16, 2021"
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width=8, fig.height=5, fig.align = "center", echo=T, warning=FALSE, message=FALSE)
+```
+# Building off of last week, we can write a function from the demo to create some diff-in-diff data. 
+
+```{r}
+library(data.table)
+rm(list=ls())
+set.seed(5642313)
+# using a function that takes numbe rof units, mean and sd for baseline, and the populatio nate
+sim_did <- function(n_units, base_trend_mean, base_trend_sd, pop_ate){
+  # Using CJ to get the base structure
+  panel_data <- CJ(i = 1:n_units, t = 1:2)
+  # Adding the trends for time 1 then 2
+  panel_data[t == 1, trend := rnorm(.N)]
+  panel_data[t == 2, trend := rnorm(.N, base_trend_mean, base_trend_sd)]
+  # Cumulatively sum the trend increments to get Y0
+  panel_data[, Y0 := cumsum(trend), i]
+  # Add some treated observations
+  panel_data[, mu := rnorm(.N, pop_ate)]
+  panel_data[, Y1 := Y0 + mu]
+  # Create Y, remember no units should be treated at t1
+  panel_data[t == 1, Y := Y0]
+  # now we need to treat some units, we need to select in some way (hopefully randomized)
+  treated_units <- sample(n_units, floor(n_units / 2))
+  # what is D here?
+  panel_data[, D := as.numeric(i %in% treated_units)]
+  # Now that we have some treated units, we can invoke SUTVA, but only for t2 and t3 if we were to include it (but we very seldom see this in practice)
+  panel_data[t == 2, Y := D * Y1 + (1 - D) * Y0]
+panel_data
+
+}
+dt <- sim_did(10,1,.1,1)
+```
+
+# Dcast and wide/long data
+
+We can also turn this into a wide data set. I typically work in wide formats, though that is just preference of the teams I have been on, not an endorsement that it is better. I typically work in wide to do all manipulation and then shift to long when I am merging after most manipulating is done. 
+
+What dcast is doing here is to cast the data out into columns based on the conditions in the function. Here, we are choosing our data, then setting our row variable, i in this case. Then, we are casting out the variables in the value.var function, so we get x number of columns based on the value on the RHS of thr ~. For each i, we now have t times as many columns for trend, Y0, etc. In our case, it is two. We now have a Y0 for time 1 and time 2 and so on. 
+
+```{r}
+wide_data <- dcast(dt, i ~ t, value.var = c("trend", "Y0", "Y1", "mu", "D", "Y"))
+wide_data
+```
+
+You can also do the same thing in a number of ways, dcast is kind of the default in our circles at least. It is easier enough that I don't ever use the tidyverse equivalent as you have to do all the aggregation within the pipes and it is way less readable code. 
+
+If we wanted to check them from a model perspective, we can use the following three, and they should all be the same and if our seed is good with such a small n, we should be close to 1. 
+```{r}
+coef(lm(Y ~ D * t, dt))["D:t"]
+coef(lm(Y_2 -Y_1 ~ D_2, wide_data))["D_2"]
+coef(lm(Y ~ D * t + factor(i) + factor(t), dt))["D:t"]
+```

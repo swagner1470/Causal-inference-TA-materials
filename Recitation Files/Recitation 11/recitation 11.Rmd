@@ -1,0 +1,89 @@
+---
+title: "Recitation 11: Weighting"
+author: "Seamus Wagner"
+date: "November 9, 2021"
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width=8, fig.height=5, fig.align = "center", echo=T, warning=FALSE, message=FALSE)
+```
+
+```{r, echo = F}
+library(dplyr)
+library(data.table)
+library(ggplot2)
+```
+
+# Lab preview
+
+Since we had to cruise through the code demo, I will offer a bit of review focused on the problem set. My goal here is to do a bit of a guided walkthrough where we fill out code and I will update the .rmd after recitation with what we come up with. That way we can have a bit of a more engaged session and you still get the benefit of having code to refer to along with comments for the problem set. I will be focusing on the questions that are more code-intensive and will leave the others to clarifying questions after you have spent some time with the recitation. 
+
+Problem 1
+```{r}
+rm(list=ls())
+set.seed(123321)
+library(data.table)
+n_covariates <- 8
+n_obs <- 1000
+# How to approach question 1?
+
+# Why does this only give 1 column, how to make it 8?
+x <- matrix(rnorm(n_obs * n_covariates))
+
+# Once you have it for 8, how to make a data.table with the other three variables?
+#dt[, ':=' (
+#id = ?,
+#Y1 = ?,
+#Y0 = ?
+#)]
+#ps. use ctrl+shift+a to reorganize chunks of code you highlight, try it on above once you uncomment it and fill it out.
+#pps. if you hold alt+up/down arrow, you can shift a line of code up or down and swap it with the existing line, try switching Y1 and Y0 so that Y0 appears first.
+```
+
+Problem 2
+
+```{r}
+# Once we have some data, how do we set up the logit model? 
+# logitmodel <- lm()
+
+# After, how do we calculate e? If lost, check the weighting demo propensity score sections. 
+# ??
+```
+
+Problem 4
+```{r}
+# We will go over what the function is and leave 5 and 6 to interpretation for you to work on alone or in groups
+```
+
+Problem 7
+
+```{r}
+# What is the data.table command to filter
+```
+
+Problem 8
+
+```{r}
+# Outer performs an operation on two arrays with syntax x,y, "function").
+```
+
+Problem 9
+
+```{r}
+# How would we set this up? What functions give us the min?
+```
+
+Problem 10
+
+```{r}
+# Break it into two parts, making the data, then graphing. Merging, filtering, iteration, or rbind/cbind are options here.
+```
+
+Problem 11
+
+```{r}
+# What kind of merge would give us this? What alternatives are there? 
+```
+
+
+
